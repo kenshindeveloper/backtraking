@@ -4,9 +4,6 @@
  * @brief 
  * @version 1.0
  * @date 2019-06-08
- * 
- * @copyright Copyright (c) 2019
- * 
  */
 #include <stdio.h>
 #include <stdlib.h>

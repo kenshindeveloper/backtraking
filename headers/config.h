@@ -23,6 +23,13 @@
 #define DESTRUCTIBLE_WALL '#'
 #define INDESTRUCTIBLE_WALL '='
 #define FLOOR '.'
+/**
+ * @file config.h
+ * @author Franklin Morales (Kenshin Urashima)
+ * @brief 
+ * @version 0.1
+ * @date 2019-06-08
+ */
 #define ENEMY 'x'
 #define BOMB 'Q'
 
