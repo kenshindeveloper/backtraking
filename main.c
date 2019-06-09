@@ -34,8 +34,8 @@ int main(int argc, char *argv[]) {
     while (!WindowShouldClose()) {
         UpdateMap(&map);
         BeginDrawing();
-            // ClearBackground((Color) {43, 43, 38, 255});
-            ClearBackground((Color) {224, 219, 205, 255});
+            ClearBackground((Color) {43, 43, 38, 255});
+            // ClearBackground((Color) {224, 219, 205, 255});
             DrawMap(&map);
             DrawRectangleRec(
                 (Rectangle) {0, SCREEN_HEIGHT - 40, SCREEN_WIDTH, 40},
