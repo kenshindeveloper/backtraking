@@ -232,7 +232,7 @@ static void __InitMap(Map *map) {
 
     for (int i=0; i < map->height; i++) {
         map->matrix[i] = (char *) malloc(sizeof(char)*map->width);
-        for (int j=0; j < map->width; j++)
+        for (int j=0; j < map->width; j++) 
             map->matrix[i][j] = INDESTRUCTIBLE_WALL;
     }
 }
@@ -242,8 +242,12 @@ static void __SaveDataMap(Map *map, int indexRow, char *data) {
         __InitMap(map);
 
     size_t lenData = strlen(data);
-    for (int indexColumn=0; indexColumn < lenData; indexColumn++)
+    for (int indexColumn=0; indexColumn < lenData; indexColumn++) {
         map->matrix[indexRow][indexColumn] = data[indexColumn];
+        
+        if (data[indexColumn] == ENEMY)
+            map->enemys++; // contador de enemigos
+    }
 }
 
 #ifdef BDEBUG

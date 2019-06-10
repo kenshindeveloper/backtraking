@@ -8,8 +8,18 @@
 #if !defined(BBACKTRAKING_H)
 #define BBACKTRAKING_H
 
-typedef struct Bactraking{
-    
-}Bactraking;
+#include "raylib.h"
+#include "map.h"
+#include "point.h"
+
+
+typedef struct Data{
+    int contEnemy;
+    int contStep;
+    Point *points;
+
+}Data;
+
+bool Backtraking(Map *map, Data data);
 
 #endif //BBACKTRAKING_H

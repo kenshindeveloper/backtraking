@@ -2,6 +2,8 @@
     "files.associations": {
         "config.h": "c",
         "stdlib.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "point.h": "c",
+        "map.h": "c"
     }
 }
