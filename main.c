@@ -1,7 +1,7 @@
 /**
  * @file main.c
  * @author Franklin Morales (Kenshin Urashima)
- * @brief 
+ * @brief
  * @version 1.0
  * @date 2019-06-08
  */
@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
                 font,
                 msg,
                 (Vector2) {28, SCREEN_HEIGHT - 32},
-                24, 
+                24,
                 1,
                 (Color) {168, 159, 148, 255}
             );
