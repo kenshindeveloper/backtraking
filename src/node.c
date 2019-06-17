@@ -8,6 +8,9 @@
 
 #include<stdlib.h>
 #include "../headers/node.h"
+#include "../headers/point.h"
+
+extern Points *enemys;
 
 void AddPointNode(Node **node, Node **prev, Point point, int cost) {
     if ((*node) == NULL) {
@@ -34,11 +37,13 @@ void DeleteNode(Node **node) {
 }
 
 bool ExistPointNode(Node *node, Point point) {
-    // Node *auxNode = node;
-    // while (auxNode != NULL) {
-
-    //     auxNode = auxNode->prev;
-    // }
+    Node *auxNode = node;
+    while (auxNode != NULL) {
+        if (node->point.x == point.x && node->point.y == point.y)
+            return true;
+            
+        auxNode = auxNode->prev;
+    }
 
     return false;
 }

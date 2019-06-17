@@ -5,13 +5,15 @@
  * @version 1.0
  * @date 2019-16-08
  */
+#include <stdio.h>
 #include <stdlib.h>
 #include "../headers/point.h"
+#include "../headers/config.h"
 
 static bool __EqualPoints(const Point *const p0, const Point *const p1);
 
 void AddPoints(Points **points, Point point) {
-    if ((*points) != NULL) {
+    if ((*points) == NULL) {
         (*points) = (Points *)malloc(sizeof(Points));
         (*points)->point = point;
         (*points)->prox = NULL;
@@ -56,6 +58,9 @@ bool DeletePoint(Points **points, Point point) {
 void DeleteAllPoints(Points **points) {
     Points *auxPoints = NULL;
     while ((*points) != NULL) {
+#ifdef BDEBUG
+        printf("Posicion del enemigo liberado...\n");
+#endif 
         auxPoints = (*points);
         (*points) = (*points)->prox;
         free(auxPoints);

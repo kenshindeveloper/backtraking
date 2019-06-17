@@ -10,6 +10,9 @@
 #include <string.h>
 #include "../headers/map.h"
 #include "../headers/config.h"
+#include "../headers/point.h"
+
+extern Points *enemys;
 
 //----------------------------------------------------------------------------------
 // Prototipos de las funciones estaticas.
@@ -221,6 +224,9 @@ static void __LoadDataMap(Map *map, const char *path) {
 
             indexRow++;
         }
+#ifdef BDEBUG
+        printf("Numero de enemigos: %d\n", map->enemys);
+#endif
 
         free(string);
         fclose(file);
@@ -245,8 +251,10 @@ static void __SaveDataMap(Map *map, int indexRow, char *data) {
     for (int indexColumn=0; indexColumn < lenData; indexColumn++) {
         map->matrix[indexRow][indexColumn] = data[indexColumn];
         
-        if (data[indexColumn] == ENEMY)
-            map->enemys++; // contador de enemigos
+        if (data[indexColumn] == ENEMY) {
+            AddPoints(&enemys, (Point){indexColumn, indexRow}); // Almaceno la posicion del enemigo.
+            map->enemys++; // Contador de enemigos.
+        }
     }
 }
 

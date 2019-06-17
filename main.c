@@ -10,6 +10,9 @@
 #include "raylib.h"
 #include "headers/config.h"
 #include "headers/map.h"
+#include "headers/point.h"
+
+Points *enemys = NULL;
 
 /**
  * @fn main
@@ -49,6 +52,7 @@ int main(int argc, char *argv[]) {
 
         EndDrawing();
     }
+    DeleteAllPoints(&enemys); // Libero la memoria por las posiciones de los enemigos creados.
     UnloadFont(font);
     DeleteMap(&map);
     CloseWindow();
