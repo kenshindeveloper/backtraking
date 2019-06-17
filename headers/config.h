@@ -28,10 +28,10 @@
 #define BOMB 'Q'
 
 // Tamano del tile NxN.
-#define TILE_SIZE 32 
+#define TILE_SIZE 64 
 
 // Separacion entre tiles.
-#define DIFF_TILE 3
+#define DIFF_TILE 6
 
 //Posicion de inicio del dibujado (x, y).
 #define INIT_X 0

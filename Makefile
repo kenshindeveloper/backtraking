@@ -276,8 +276,9 @@ endif
 # Define all source files required
 PROJECT_SOURCE_FILES ?= main.c              \
                         src/map.c           \
-                        src/point.c         \
                         src/backtraking.c   \
+                        src/point.c         \
+                        src/node.c          \
 
 # Define all object files from source files
 OBJS = $(patsubst %.c, %.o, $(PROJECT_SOURCE_FILES))

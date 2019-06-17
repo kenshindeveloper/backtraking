@@ -1,25 +1,35 @@
 /**
  * @file point.h
  * @author Franklin Morales (Kenshin Urashima)
- * @brief 
- * @version 0.1
- * @date 2019-06-10
+ * @brief
+ * @version 1.0
+ * @date 2019-16-08
  */
+#if !defined(BPOINT_H)
+#define BPOINT_H
 
 #include "raylib.h"
 
+/**
+ * @struct Point
+ * @brief Permite almacenar las posicion de la matriz.
+ */
 typedef struct Point {
-    int x;
-    int y;
-    char event;
-    struct Point *prox;
+    int x; // < fila.
+    int y; // < columna.
 
 }Point;
 
-Point NewPoint(void);
+typedef struct Points {
+    Point point;
+    struct Points *prox;
 
-void AddPoint(Point **point, int x, int y, char event);
+}Points;
 
-bool ExistPoint(Point *const point, int x, int y);
+void AddPoints(Points **points, Point point);
 
-void DeletePoint(Point **point);
+bool DeletePoint(Points **points, Point point);
+
+void DeleteAllPoints(Points **points);
+
+#endif //BPOINT_H
