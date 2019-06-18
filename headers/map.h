@@ -20,7 +20,7 @@ typedef struct Map {
     int height; // < Representa el alto del mapa (#filas). 
     int steps; // < Representa el numero de pasos que el player debe dar.
     int enemys; // < Numero de enemigos en el mapa;
-    char **matrix; // < Matriz logico del mapa a cargar.
+    char **matrix; // < Matriz logica del mapa a cargar.
 
     Image image;
     Texture2D texture;

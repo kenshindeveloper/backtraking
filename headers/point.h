@@ -32,4 +32,6 @@ bool DeletePoint(Points **points, Point point);
 
 void DeleteAllPoints(Points **points);
 
+int SizePoints(const Points *points);
+
 #endif //BPOINT_H

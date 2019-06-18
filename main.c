@@ -11,8 +11,10 @@
 #include "headers/config.h"
 #include "headers/map.h"
 #include "headers/point.h"
+#include "headers/backtraking.h"
 
 Points *enemys = NULL;
+Point posPlayer = {0};
 
 /**
  * @fn main
@@ -26,9 +28,16 @@ int main(int argc, char *argv[]) {
     Font font = LoadFont("resources/fonts/04B_03__.TTF");
     const char *msg = "Push key space to start.";
 
-    Map map = NewMap("resources/maps/Entrada.txt");
+    // Map map = NewMap("resources/maps/Entrada.txt");
+    Map map = NewMap("resources/maps/map_0.txt");
     if (!ValidateMap(&map))
         return EXIT_FAILURE;
+
+#ifdef BDEBUG
+    printf("POSITION PLAYER: (%d, %d)\n", posPlayer.x, posPlayer.y);
+#endif //BDEBUG
+    Node *node = NULL;
+    Backtraking(&map, &node, NULL, posPlayer, 0, '.');
 
     SetTargetFPS(60);
     while (!WindowShouldClose()) {

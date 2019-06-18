@@ -13,6 +13,7 @@
 #include "../headers/point.h"
 
 extern Points *enemys;
+extern Point posPlayer;
 
 //----------------------------------------------------------------------------------
 // Prototipos de las funciones estaticas.
@@ -255,6 +256,8 @@ static void __SaveDataMap(Map *map, int indexRow, char *data) {
             AddPoints(&enemys, (Point){indexColumn, indexRow}); // Almaceno la posicion del enemigo.
             map->enemys++; // Contador de enemigos.
         }
+        else if (data[indexColumn] == PLAYER) 
+            posPlayer = (Point){indexColumn, indexRow};
     }
 }
 

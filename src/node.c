@@ -12,12 +12,13 @@
 
 extern Points *enemys;
 
-void AddPointNode(Node **node, Node **prev, Point point, int cost) {
+void AddPointNode(Node **node, Node **prev, Point point, int cost, char event) {
     if ((*node) == NULL) {
         (*node) = (Node *)malloc(sizeof(Node));
         (*node)->point = point;
         (*node)->cost = cost;
-        (*node)->prev = (prev == NULL)?(NULL):((*prev));
+        (*node)->event = event;
+        (*node)->prev = (prev != NULL)?((*prev)):(NULL);
         (*node)->child[0] = NULL;
         (*node)->child[1] = NULL;
         (*node)->child[2] = NULL;

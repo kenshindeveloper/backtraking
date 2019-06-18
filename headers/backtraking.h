@@ -8,5 +8,10 @@
 #if !defined(BBACKTRAKING_H)
 #define BBACKTRAKING_H
 
+#include "node.h"
+#include "point.h"
+#include "map.h"
+
+bool Backtraking(Map *map, Node **node, Node **prev, Point point, int step, char event);
 
 #endif //BBACKTRAKING_H

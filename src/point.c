@@ -68,6 +68,17 @@ void DeleteAllPoints(Points **points) {
     }
 }
 
+int SizePoints(const Points *points) {
+    int size = 0;
+    const Points *auxPoints = points;
+    while (auxPoints != NULL) {
+        size++;
+        auxPoints = auxPoints->prox;
+    }
+
+    return size;
+}
+
 static bool __EqualPoints(const Point *const p0, const Point *const p1) {
     if (p0->x == p1->x && p0->y == p1->y)
         return true;

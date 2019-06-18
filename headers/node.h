@@ -37,7 +37,7 @@ typedef struct Node {
  * @param cost Almacena el costo del movimiento hacia el nuevo nodo.
  * @return void.
  */
-void AddPointNode(Node **node, Node **prev, Point point, int cost);
+void AddPointNode(Node **node, Node **prev, Point point, int cost, char event);
 
 void DeleteNode(Node **node);
 
