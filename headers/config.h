@@ -14,10 +14,10 @@
 #define BDEBUG 1
 
 // Define el ancho de la pantalla.
-#define SCREEN_WIDTH 640
+#define SCREEN_WIDTH 800
 
 // Define el alto de la pantalla.
-#define SCREEN_HEIGHT 480
+#define SCREEN_HEIGHT 600
 
 // Nodos de carga del mapa.
 #define PLAYER '@'
@@ -31,7 +31,7 @@
 #define TILE_SIZE 64 
 
 // Separacion entre tiles.
-#define DIFF_TILE 6
+#define DIFF_TILE 4
 
 //Posicion de inicio del dibujado (x, y).
 #define INIT_X 0

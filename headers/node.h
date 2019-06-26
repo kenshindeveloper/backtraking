@@ -43,4 +43,14 @@ void DeleteNode(Node **node);
 
 bool ExistPointNode(Node *node, Point point);
 
+int SizeNode(Node *node);
+
+void PrintNode(Node *node);
+
+int SearchCostNode(Node *node);
+
+Node *SearchPathNode(Node *node, int steps);
+
+void ViewPathNode(const Node *node);
+
 #endif //BNODE_H

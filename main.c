@@ -12,6 +12,7 @@
 #include "headers/map.h"
 #include "headers/point.h"
 #include "headers/backtraking.h"
+#include "headers/node.h"
 
 Points *enemys = NULL;
 Point posPlayer = {0};
@@ -36,15 +37,31 @@ int main(int argc, char *argv[]) {
 #ifdef BDEBUG
     printf("POSITION PLAYER: (%d, %d)\n", posPlayer.x, posPlayer.y);
 #endif //BDEBUG
-    Node *node = NULL;
-    Backtraking(&map, &node, NULL, posPlayer, 0, '.');
+    Node *node = (Node *)malloc(sizeof(Node));
+    node->cost = 0;
+    node->event = 0;
+    node->point = posPlayer;
+    node->prev = NULL;
+    for (int i=0; i < 4; i++)
+        node->child[i] = NULL;
+    
+    bool result = Backtraking(&map, &node, NULL, posPlayer, 0, 0);
+    printf("*********************************\n");
+    // PrintNode(node);
+    int steps = SearchCostNode(node);
+    printf("encontrado: %d\n", result);
+    printf("num de move: %d\n", steps);
+    printf("node num: %d\n", SizeNode(node));
+    ViewPathNode(SearchPathNode(node, steps));
+    printf("*********************************\n");
+
 
     SetTargetFPS(60);
     while (!WindowShouldClose()) {
         UpdateMap(&map);
         BeginDrawing();
-            ClearBackground((Color) {43, 43, 38, 255});
-            // ClearBackground((Color) {224, 219, 205, 255});
+            // ClearBackground((Color) {43, 43, 38, 255});
+            ClearBackground((Color) {224, 219, 205, 255});
             DrawMap(&map);
             DrawRectangleRec(
                 (Rectangle) {0, SCREEN_HEIGHT - 40, SCREEN_WIDTH, 40},
@@ -61,6 +78,7 @@ int main(int argc, char *argv[]) {
 
         EndDrawing();
     }
+    DeleteNode(&node);
     DeleteAllPoints(&enemys); // Libero la memoria por las posiciones de los enemigos creados.
     UnloadFont(font);
     DeleteMap(&map);
