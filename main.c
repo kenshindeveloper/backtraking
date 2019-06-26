@@ -9,5 +9,9 @@ int main(int argc, char *argv[]) {
     printf("width: %d\n", map.width);
     printf("height: %d\n", map.height);
 
+    PrintMap(&map);
+
+    DeleteMap(&map);
+
     return EXIT_SUCCESS;
 }

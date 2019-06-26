@@ -11,6 +11,8 @@ typedef struct Map {
 
 Map NewMap(const char *path);
 
+void PrintMap(Map *map);
+
 void DeleteMap(Map *map);
 
 #endif //MAP_H
