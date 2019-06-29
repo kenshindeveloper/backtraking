@@ -46,6 +46,7 @@ typedef struct Map {
     int numPlayer;
 
     bool isLoaded;
+    bool isPutBomb;
 
     Point posBomb;
 
@@ -76,9 +77,24 @@ static bool __ValidateDataMatrix(Map *map);
 
 static bool __ValidateCharacter(char c);
 
-static bool __ValidateExplotion(Map map);
 
-bool Bactraking(Map *map, Array *visitBomb, Array *visitNoBomb);
+void AddPointArray(Array **array, Point point);
+
+void DeleteArray(Array **array);
+
+Array *CopyArray(Array *const array);
+
+void PrintArray(Array *const array);
+
+
+bool Backtraking(Map *map, Array *visitBomb, Array *visitNoBomb);
+
+static bool __ValidateExplotion(Map map, Point point, Array *auxVisitNoBomb, Array *auxVisitBomb);
+
+static bool __ValidatePutBomb(Map map, Point point);
+
+static Point __ValidateMovePlayer(Map map, Point point, Array path);
+
 
 /*************************************************************
 *-----------------------FUNC--MAIN----------------------------
@@ -86,16 +102,39 @@ bool Bactraking(Map *map, Array *visitBomb, Array *visitNoBomb);
 
 
 int main(int argc, char *argv[]) {
+    system("cls");
     const char *path = "maps/map.txt";
     if (argc == 2)
         path = argv[1];
 
-    Map map = NewMap(path);
+    Array *array_0 = NULL;
+    AddPointArray(&array_0, (Point) {0, 0});
+    AddPointArray(&array_0, (Point) {1, 0});
+    AddPointArray(&array_0, (Point) {2, 0});
 
-    if (map.isLoaded)
-        __PrintMatrixMap(&map);
+    Array *array_1 = CopyArray(array_0);
+    AddPointArray(&array_1, (Point) {5, 6});
+    AddPointArray(&array_1, (Point) {6, 6});
+    AddPointArray(&array_1, (Point) {7, 6});
 
-    DeleteMap(&map);
+    PrintArray(array_0);
+    PrintArray(array_1);
+
+    DeleteArray(&array_0);
+    DeleteArray(&array_1);
+
+    if (array_0 == NULL)
+        printf("array_0 es NULL.\n");
+
+    if (array_1 == NULL)
+        printf("array_1 es NULL.\n");
+
+    // Map map = NewMap(path);
+    //
+    // if (map.isLoaded)
+    //     __PrintMatrixMap(&map);
+    //
+    // DeleteMap(&map);
 
     return EXIT_SUCCESS;
 }
@@ -105,7 +144,6 @@ int main(int argc, char *argv[]) {
  **************************************************************/
 Map NewMap(const char *path) {
      Map map = {0};
-     map.matrix = NULL;
      map.isLoaded = __InitMatrixMap(&map, path);
      return map;
  }
@@ -122,7 +160,77 @@ void DeleteMap(Map *map) {
      }
  }
 
-bool Bactraking(Map *map, Array *visitBomb, Array *visitNoBomb) {
+ void AddPointArray(Array **array, Point point) {
+     if ((*array) == NULL) {
+         (*array) = (Array *)malloc(sizeof(Array));
+         (*array)->point = point;
+         (*array)->prox = NULL;
+     }
+     else {
+         Array *auxArray = (*array);
+         while (auxArray->prox != NULL)
+            auxArray = auxArray->prox;
+
+        auxArray->prox = (Array *)malloc(sizeof(Array));
+        auxArray->prox->point = point;
+        auxArray->prox->prox = NULL;
+     }
+ }
+
+ void DeleteArray(Array **array) {
+     Array *auxArray = NULL;
+     while ((*array) != NULL) {
+         auxArray = (*array);
+         (*array) = (*array)->prox;
+         free(auxArray);
+         auxArray = NULL;
+     }
+ }
+
+ Array *CopyArray(Array *const array) {
+     Array *newArray = NULL;
+     const Array *auxArray = array;
+
+     while (auxArray != NULL) {
+         AddPointArray(&newArray, auxArray->point);
+         auxArray = auxArray->prox;
+     }
+
+     return newArray;
+ }
+
+ void PrintArray(Array *const array) {
+     printf("\n");
+     Array *auxArray = array;
+     while (auxArray != NULL) {
+         printf("(%d, %d) ", auxArray->point.x, auxArray->point.y);
+         auxArray = auxArray->prox;
+     }
+     printf("\n");
+ }
+
+bool Backtraking(Map *map, Array *visitBomb, Array *visitNoBomb) {
+    // Array *auxVisitNoBomb = visitNoBomb;
+    // Array *auxVisitBomb = visitBomb;
+    // if (map.isPutBomb && !__ValidateExplotion(map, point, auxVisitNoBomb, auxVisitBomb))
+    //     return false;
+    //
+    // if (map.isPutBomb)
+    //     AddPointArray(auxVisitBomb, point);
+    // else
+    //     AddPointArray(auxVisitBomb, point);
+    //
+    // Map auxMap = map;
+    // if (__ValidatePutBomb(auxMap, point))
+    //     Backtraking(auxMap, point, auxVisitNoBomb, auxVisitBomb);
+    //
+    // auxMap = map;
+    // Point movePoint = __ValidateMovePlayer(auxMap, point, ((auxMap.isPutBomb)?(auxVisitBomb):(auxVisitNoBomb)));
+    // if (movePoint.x > -1)
+    //     Backtraking(auxMap, movePoint, auxVisitNoBomb, auxVisitBomb);
+    //
+    // if(map.enemies == 0 && map.steps <= map.maxSteps)
+    //     return true;
 
     return false;
 }
