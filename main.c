@@ -94,13 +94,14 @@ int main(int argc, char *argv[]) {
          return false;
      }
 
-     char *row = (char *)malloc(sizeof(char)*128);
      int indexRow = -1;
+     char *row = (char *)malloc(sizeof(char)*128);
      while (feof(file) == 0) {
          fgets(row, 128, file);
          if (indexRow == -1) {
-             char *auxRow = row;
-
+             char *auxRow = (char *)malloc(sizeof(char)*128);
+             strcpy(auxRow, row);
+             
              char *token = strtok(auxRow, " ");
              map->maxSteps = atoi(token);
 
@@ -109,11 +110,13 @@ int main(int argc, char *argv[]) {
 
              token = strtok(NULL, " ");
              map->height = atoi(token);
+
+             free(auxRow);
          }
          else if (indexRow > -1) {
          }
 
-         printf("%s ", row);
+         printf("%s", row);
          indexRow++;
      }
 
