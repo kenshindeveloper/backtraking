@@ -25,35 +25,49 @@ typedef enum bool {
 /**************************************************************
  *-----------------------ESTRUCTURAS---------------------------
  **************************************************************/
-
 typedef struct Point {
     int x;
     int y;
-
 }Point;
 
 typedef struct Array {
     Point point;
     struct Array *prox;
-
 }Array;
 
 typedef struct Map {
     int width;
     int height;
     int maxSteps;
+    int stepsBomb;
+    int steps;
     int numEnemies;
     int numPlayer;
-
+    char **matrix;
+    char *events;
     bool isLoaded;
     bool isPutBomb;
-
     Point posBomb;
-
-    char **matrix;
-
 }Map;
 
+typedef struct ArrayMap {
+    Map **map;
+    struct ArrayMap *prox;
+}ArrayMap;
+
+typedef struct ListArray {
+    Array **array;
+    struct ListArray *prox;
+}ListArray;
+
+/**************************************************************
+ *-----------------------GLOBALES------------------------------
+ **************************************************************/
+static Point POS_PLAYER = {0};
+static ArrayMap *COPY_MAPS = NULL;
+static ListArray *COPY_ARRAYS = NULL;
+static char *TOTAL_EVENTS = NULL;
+static int TOTAL_STEPS = 10000; // se inicializa con un valor grande.
 
 /**************************************************************
  *-----------------------PROTOTIPOS----------------------------
@@ -63,6 +77,31 @@ Map NewMap(const char *path);
 
 void DeleteMap(Map *map);
 
+Map *CopyMap(Map *map); 
+
+void AddArrayMap(ArrayMap **arrayMap, Map **map);
+
+void DeleteArrayMap(ArrayMap **arrayMap);
+
+void AddPointArray(Array **array, Point point);
+
+void DeleteArray(Array **array);
+
+Array *CopyArray(Array *const array);
+
+void PrintArray(Array *const array);
+
+char **CopyMatrix(Map *map);
+
+bool Backtraking(Map *map, Point posPlayer, Array **visitBomb, Array **visitNoBomb);
+
+char *CopyEventArray(Map *map);
+
+void DeleteCopyArray();
+
+/**************************************************************
+ *-----------------PROTOTIPOS-ESTATICOS------------------------
+ **************************************************************/
 static bool __InitMatrixMap(Map *map, const char *path);
 
 static void __PrintMatrixMap(const Map *map);
@@ -77,64 +116,41 @@ static bool __ValidateDataMatrix(Map *map);
 
 static bool __ValidateCharacter(char c);
 
+static bool __EvaluateExplotionVertical(Map *map);
 
-void AddPointArray(Array **array, Point point);
+static bool __EvaluateExplotionHorizontal(Map *map);
 
-void DeleteArray(Array **array);
+static bool __ValidateExplotion(Map *map);
 
-Array *CopyArray(Array *const array);
+static bool __ValidatePutBomb(Map *map, Point posPlayer);
 
-void PrintArray(Array *const array);
+static Point __ValidateMovePlayer(Map *map, Point posPlayer, Array *path);
 
+static bool __ValidatePointPath(Array *path, Point point);
 
-bool Backtraking(Map *map, Array *visitBomb, Array *visitNoBomb);
-
-static bool __ValidateExplotion(Map map, Point point, Array *auxVisitNoBomb, Array *auxVisitBomb);
-
-static bool __ValidatePutBomb(Map map, Point point);
-
-static Point __ValidateMovePlayer(Map map, Point point, Array path);
-
+static void __CopyEventsToEventsTotal(Map *map);
 
 /*************************************************************
 *-----------------------FUNC--MAIN----------------------------
 **************************************************************/
-
-
 int main(int argc, char *argv[]) {
     system("cls");
     const char *path = "maps/map.txt";
     if (argc == 2)
         path = argv[1];
 
-    Array *array_0 = NULL;
-    AddPointArray(&array_0, (Point) {0, 0});
-    AddPointArray(&array_0, (Point) {1, 0});
-    AddPointArray(&array_0, (Point) {2, 0});
+    Map map = NewMap(path);
+    Array *visitNoBomb = NULL;
+    Array *visitBomb = NULL;
+    if (map.isLoaded) {
+        __PrintMatrixMap(&map);
+        Backtraking(&map, POS_PLAYER, &visitBomb, &visitNoBomb);
+    }
 
-    Array *array_1 = CopyArray(array_0);
-    AddPointArray(&array_1, (Point) {5, 6});
-    AddPointArray(&array_1, (Point) {6, 6});
-    AddPointArray(&array_1, (Point) {7, 6});
 
-    PrintArray(array_0);
-    PrintArray(array_1);
-
-    DeleteArray(&array_0);
-    DeleteArray(&array_1);
-
-    if (array_0 == NULL)
-        printf("array_0 es NULL.\n");
-
-    if (array_1 == NULL)
-        printf("array_1 es NULL.\n");
-
-    // Map map = NewMap(path);
-    //
-    // if (map.isLoaded)
-    //     __PrintMatrixMap(&map);
-    //
-    // DeleteMap(&map);
+    printf("\neliminando...\n");
+    DeleteArrayMap(&COPY_MAPS);
+    DeleteMap(&map);
 
     return EXIT_SUCCESS;
 }
@@ -142,95 +158,191 @@ int main(int argc, char *argv[]) {
 /**************************************************************
  *-----------------------IMPLEMENTACION------------------------
  **************************************************************/
+char *CopyEventArray(Map *map) {
+    char *copyEvents = (char *)malloc(sizeof(char)*(map->maxSteps+1));
+
+    for (int i=0; i < map->maxSteps; i++)
+        copyEvents[i] = map->events[i];
+
+    return copyEvents;
+}
+
+char **CopyMatrix(Map *map) {
+    char **copyMatrix = (char **)malloc(sizeof(char *)*map->height);
+
+    for (int i=0; i < map->height; i++) {
+        copyMatrix[i] = (char *)malloc(sizeof(char)*map->width);
+        for (int j=0; j < map->width; j++)
+            copyMatrix[i][j] = map->matrix[i][j];
+    }
+    return copyMatrix;
+}
+
+Map *CopyMap(Map *map) {
+    Map *copyMap = (Map *)malloc(sizeof(Map));
+    copyMap->width = map->height;
+    copyMap->height = map->height;
+    copyMap->maxSteps = map->maxSteps;
+    copyMap->stepsBomb = map->stepsBomb;
+    copyMap->steps = map->steps;
+    copyMap->numEnemies = map->numEnemies;
+    copyMap->numPlayer = map->numPlayer;
+    copyMap->isLoaded = map->isLoaded;
+    copyMap->isPutBomb = map->isPutBomb;
+    copyMap->posBomb = map->posBomb;
+    copyMap->matrix = CopyMatrix(map);
+    copyMap->events = CopyEventArray(map);
+
+    AddArrayMap(&COPY_MAPS, &copyMap);
+    return copyMap;
+}
+
+void AddArrayMap(ArrayMap **arrayMap, Map **map) {
+    if ((*arrayMap) == NULL) {
+        (*arrayMap)->map = map;
+        (*arrayMap)->prox = NULL;
+    }
+    else {
+        ArrayMap *auxArrayMap = (*arrayMap);
+        while (auxArrayMap->prox != NULL)
+            auxArrayMap = auxArrayMap->prox;
+        
+        auxArrayMap->prox->map = map;
+        auxArrayMap->prox->prox = NULL;
+    }
+}
+
+void DeleteArrayMap(ArrayMap **arrayMap) {
+    ArrayMap *auxArrayMap = NULL;
+
+    while ((*arrayMap) != NULL) {
+        auxArrayMap = (*arrayMap);
+        (*arrayMap) = (*arrayMap)->prox;
+        DeleteMap((*auxArrayMap->map));
+        free(auxArrayMap);
+        auxArrayMap = NULL;
+    }
+
+    if (arrayMap != NULL) {
+        free(arrayMap);
+        arrayMap = NULL;
+    }
+}
+
 Map NewMap(const char *path) {
-     Map map = {0};
-     map.isLoaded = __InitMatrixMap(&map, path);
-     return map;
- }
+    Map map = {0};
+    map.isLoaded = __InitMatrixMap(&map, path);
+    if (map.isLoaded) {
+        map.events = (char *)malloc(sizeof(char)*(map.maxSteps+1));
+        memset(map.events, ' ', (map.maxSteps+1));
+    }
+    return map;
+}
 
 void DeleteMap(Map *map) {
-     for (int i=0; i < map->height; i++) {
-         free(map->matrix);
-         map->matrix = NULL;
-     }
+    if (map != NULL) {
+        free(map->events);
+        map->events = NULL;
 
-     if (map->matrix != NULL) {
-         free(map->matrix);
-         map->matrix = NULL;
-     }
- }
+        for (int i=0; i < map->height; i++) {
+            free(map->matrix[i]);
+            map->matrix[i] = NULL;
+        }
 
- void AddPointArray(Array **array, Point point) {
-     if ((*array) == NULL) {
-         (*array) = (Array *)malloc(sizeof(Array));
-         (*array)->point = point;
-         (*array)->prox = NULL;
-     }
-     else {
-         Array *auxArray = (*array);
-         while (auxArray->prox != NULL)
+        if (map->matrix != NULL) {
+            free(map->matrix);
+            map->matrix = NULL;
+        }
+    }
+}
+
+void AddPointArray(Array **array, Point point) {
+    if ((*array) == NULL) {
+        (*array) = (Array *)malloc(sizeof(Array));
+        (*array)->point = point;
+        (*array)->prox = NULL;
+    }
+    else {
+        Array *auxArray = (*array);
+        while (auxArray->prox != NULL)
             auxArray = auxArray->prox;
 
         auxArray->prox = (Array *)malloc(sizeof(Array));
         auxArray->prox->point = point;
         auxArray->prox->prox = NULL;
-     }
- }
+    }
+}
 
- void DeleteArray(Array **array) {
-     Array *auxArray = NULL;
-     while ((*array) != NULL) {
-         auxArray = (*array);
-         (*array) = (*array)->prox;
-         free(auxArray);
-         auxArray = NULL;
-     }
- }
+void DeleteArray(Array **array) {
+    Array *auxArray = NULL;
+    while ((*array) != NULL) {
+        auxArray = (*array);
+        (*array) = (*array)->prox;
+        free(auxArray);
+        auxArray = NULL;
+    }
+}
 
- Array *CopyArray(Array *const array) {
-     Array *newArray = NULL;
-     const Array *auxArray = array;
+Array *CopyArray(Array *const array) {
+    Array *copyArray = NULL;
+    const Array *auxArray = array;
 
-     while (auxArray != NULL) {
-         AddPointArray(&newArray, auxArray->point);
-         auxArray = auxArray->prox;
-     }
+    while (auxArray != NULL) {
+        AddPointArray(&copyArray, auxArray->point);
+        auxArray = auxArray->prox;
+    }
 
-     return newArray;
- }
+    return copyArray;
+}
 
- void PrintArray(Array *const array) {
-     printf("\n");
-     Array *auxArray = array;
-     while (auxArray != NULL) {
-         printf("(%d, %d) ", auxArray->point.x, auxArray->point.y);
-         auxArray = auxArray->prox;
-     }
-     printf("\n");
- }
+void PrintArray(Array *const array) {
+    printf("\n");
+    Array *auxArray = array;
+    while (auxArray != NULL) {
+        printf("(%d, %d) ", auxArray->point.x, auxArray->point.y);
+        auxArray = auxArray->prox;
+    }
+    printf("\n");
+}
 
-bool Backtraking(Map *map, Array *visitBomb, Array *visitNoBomb) {
-    // Array *auxVisitNoBomb = visitNoBomb;
-    // Array *auxVisitBomb = visitBomb;
-    // if (map.isPutBomb && !__ValidateExplotion(map, point, auxVisitNoBomb, auxVisitBomb))
-    //     return false;
-    //
-    // if (map.isPutBomb)
-    //     AddPointArray(auxVisitBomb, point);
-    // else
-    //     AddPointArray(auxVisitBomb, point);
-    //
-    // Map auxMap = map;
-    // if (__ValidatePutBomb(auxMap, point))
-    //     Backtraking(auxMap, point, auxVisitNoBomb, auxVisitBomb);
-    //
-    // auxMap = map;
-    // Point movePoint = __ValidateMovePlayer(auxMap, point, ((auxMap.isPutBomb)?(auxVisitBomb):(auxVisitNoBomb)));
-    // if (movePoint.x > -1)
-    //     Backtraking(auxMap, movePoint, auxVisitNoBomb, auxVisitBomb);
-    //
-    // if(map.enemies == 0 && map.steps <= map.maxSteps)
-    //     return true;
+bool Backtraking(Map *map, Point posPlayer, Array **visitBomb, Array **visitNoBomb) {
+    map->steps++;
+    if (map->steps > map->maxSteps)
+        return false;
+
+    if (map->isPutBomb && map->stepsBomb == 3) {
+        if (!__ValidateExplotion(map))
+            return false;
+    
+        DeleteArray(visitBomb);
+        DeleteArray(visitNoBomb);
+        map->stepsBomb = 0;
+        map->isPutBomb = false;
+    }
+
+    if (map->isPutBomb) {
+        map->stepsBomb++;
+        AddPointArray(visitNoBomb, posPlayer);
+    }
+    else
+        AddPointArray(visitBomb, posPlayer);
+
+    Array *auxVisitNoBomb = CopyArray(*visitNoBomb);
+    Array *auxVisitBomb = CopyArray(*visitBomb);    
+    Map *copyMap = CopyMap(map);
+    if (__ValidatePutBomb(copyMap, posPlayer))
+        Backtraking(copyMap, posPlayer, &auxVisitNoBomb, &auxVisitBomb);
+    
+    Map *copyMoveMap = CopyMap(map);
+    Point movePoint = __ValidateMovePlayer(copyMoveMap, posPlayer, ((copyMoveMap->isPutBomb)?(auxVisitBomb):(auxVisitNoBomb)));
+    if (movePoint.x > -1)
+        Backtraking(copyMoveMap, movePoint, &auxVisitNoBomb, &auxVisitBomb);
+    
+    if(map->numEnemies == 0 && (map->steps <= map->maxSteps) && (TOTAL_STEPS > map->steps)) {
+        __CopyEventsToEventsTotal(map);
+        TOTAL_STEPS = map->steps;
+        return true;
+    }
 
     return false;
 }
@@ -238,6 +350,207 @@ bool Backtraking(Map *map, Array *visitBomb, Array *visitNoBomb) {
 /**************************************************************
  *--------------IMPLEMENTACION--FUNCIONES-STATIC---------------
  **************************************************************/
+
+static void __CopyEventsToEventsTotal(Map *map) {
+    if (TOTAL_EVENTS == NULL) {
+        TOTAL_EVENTS = (char *)malloc(sizeof(char)*(map->maxSteps+1));
+        memset(TOTAL_EVENTS, ' ', (map->maxSteps+1));
+    }
+
+    for (int i=0; i < map->maxSteps; i++)
+        TOTAL_EVENTS[i] = map->events[i];         
+}
+
+static bool __ValidatePointPath(Array *path, Point point) {
+    Array *auxPath = path;
+    while (auxPath->prox != NULL) {
+        if (auxPath->point.x == point.x && auxPath->point.y == point.y)
+            return true;
+        auxPath = auxPath->prox;
+    }
+
+    return false;
+}
+
+static bool __PutExplotionVertical(Map *map, Point posPlayer) {
+    bool evalUp = true;
+    bool evalDown = true;
+    for (int i=0; ((evalUp || evalDown) && i < map->height); i++) {
+        if (evalUp && (posPlayer.y-i) >=0) {
+            if (map->matrix[(posPlayer.y-i)][posPlayer.x] == WALL_DEST ||
+                map->matrix[(posPlayer.y-i)][posPlayer.x] == ENEMY) {
+                map->matrix[(posPlayer.y-i)][posPlayer.x] = EVENT_BOMB;
+                return true;
+            }
+            else if (map->matrix[(posPlayer.y-i)][posPlayer.x] == WALL)
+                evalUp = false;
+        }
+        if (evalDown && (posPlayer.y+i) < map->height) {
+            if (map->matrix[(posPlayer.y+i)][posPlayer.x] == WALL_DEST || 
+                map->matrix[(posPlayer.y+i)][posPlayer.x] == ENEMY) {
+                map->matrix[(posPlayer.y+i)][posPlayer.x] = EVENT_BOMB;
+                return true;
+            }
+            else if (map->matrix[(posPlayer.y+i)][posPlayer.x] == WALL)
+                evalDown = false; 
+        }
+    }
+    return true;
+}
+
+static bool __PutExplotionHorizontal(Map *map, Point posPlayer) {
+    bool evalLeft = true;
+    bool evalRight = true;
+    for (int j=0; ((evalLeft || evalRight) && j < map->width); j++) {
+        if (evalLeft && (posPlayer.x-j) >=0) {
+            if (map->matrix[posPlayer.y][(posPlayer.x-j)] == WALL_DEST ||
+                map->matrix[posPlayer.y][(posPlayer.x-j)] == ENEMY) {
+                map->matrix[posPlayer.y][(posPlayer.x-j)] = EVENT_BOMB;
+                return true;
+            }
+            else if (map->matrix[posPlayer.y][(posPlayer.x-j)] == WALL) {
+                evalLeft = false;
+            }
+        }
+        if (evalRight && (posPlayer.x+j) < map->width) {
+            if (map->matrix[posPlayer.y][(posPlayer.x+j)] == WALL_DEST ||
+                map->matrix[posPlayer.y][(posPlayer.x+j)] == ENEMY) {
+                map->matrix[posPlayer.y][(posPlayer.x+j)] = EVENT_BOMB;
+                return true;
+            }
+            else if (map->matrix[posPlayer.y][(posPlayer.x+j)] == WALL)
+                evalLeft = false;
+        }
+    }
+    return true;
+}
+
+static bool __EvaluateExplotionVertical(Map *map) {
+    bool evalUp = true;
+    bool evalDown = true;
+    for (int i=0; ((evalUp || evalDown) && i < map->height); i++) {
+        if (evalUp && (map->posBomb.y-i) >=0) {
+            if (map->matrix[(map->posBomb.y-i)][map->posBomb.x] == WALL_DEST) {
+                map->matrix[(map->posBomb.y-i)][map->posBomb.x] = '.';
+            }
+            else if (map->matrix[(map->posBomb.y-i)][map->posBomb.x] == ENEMY) {
+                map->matrix[(map->posBomb.y-i)][map->posBomb.x] = '.';
+                map->numEnemies--;
+            }
+            else if (map->matrix[(map->posBomb.y-i)][map->posBomb.x] == WALL) {
+                evalUp = false;
+            }
+            else if (map->matrix[(map->posBomb.y-i)][map->posBomb.x] == PLAYER) {
+                return false;
+            }
+        }
+
+        if (evalDown && (map->posBomb.y+i) < map->height) {
+            if (map->matrix[(map->posBomb.y+i)][map->posBomb.x] == WALL_DEST) {
+                map->matrix[(map->posBomb.y+i)][map->posBomb.x] = '.';
+            }
+            
+            else if (map->matrix[(map->posBomb.y+i)][map->posBomb.x] == ENEMY) {
+                map->matrix[(map->posBomb.y+i)][map->posBomb.x] = '.';
+                map->numEnemies--;
+            }
+
+            else if (map->matrix[(map->posBomb.y+i)][map->posBomb.x] == WALL) {
+                evalDown = false;
+            }
+
+            else if (map->matrix[(map->posBomb.y+i)][map->posBomb.x] == PLAYER) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+static bool __EvaluateExplotionHorizontal(Map *map) {
+    bool evalLeft = true;
+    bool evalRight = true;
+    for (int j=0; ((evalLeft || evalRight) && (j < map->width)); j++) {
+        if (evalLeft && (map->posBomb.x-j) >=0) {
+            if (map->matrix[map->posBomb.y][(map->posBomb.x-j)] == WALL_DEST) {
+                map->matrix[map->posBomb.y][(map->posBomb.x-j)] = '.';
+            }
+            else if (map->matrix[map->posBomb.y][(map->posBomb.x-j)] == ENEMY) {
+                map->matrix[map->posBomb.y][(map->posBomb.x-j)] = '.';
+                map->numEnemies--;
+            }
+            else if (map->matrix[map->posBomb.y][(map->posBomb.x-j)] == WALL) {
+                evalLeft = false;
+            }
+            else if (map->matrix[map->posBomb.y][(map->posBomb.x-j)] == PLAYER) {
+                return false;
+            }
+        }
+
+        if (evalRight && (map->posBomb.x+j) < map->width) {
+             if (map->matrix[map->posBomb.y][(map->posBomb.x+j)] == WALL_DEST) {
+                map->matrix[map->posBomb.y][(map->posBomb.x+j)] = '.';
+            }
+            else if (map->matrix[map->posBomb.y][(map->posBomb.x+j)] == ENEMY) {
+                map->matrix[map->posBomb.y][(map->posBomb.x+j)] = '.';
+                map->numEnemies--;
+            }
+            else if (map->matrix[map->posBomb.y][(map->posBomb.x+j)] == WALL) {
+                evalLeft = false;
+            }
+            else if (map->matrix[map->posBomb.y][(map->posBomb.x+j)] == PLAYER) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+static bool __ValidateExplotion(Map *map) {
+    if (!__EvaluateExplotionVertical(map) || !__EvaluateExplotionHorizontal(map))
+        return false;   
+
+    return true;
+}
+
+static bool __ValidatePutBomb(Map *map, Point posPlayer) {
+    map->isPutBomb = (__PutExplotionVertical(map, posPlayer) || __PutExplotionHorizontal(map, posPlayer));
+    if (map->isPutBomb && map->steps < map->maxSteps)
+        map->events[map->steps] = EVENT_BOMB;
+
+    return  map->isPutBomb;
+}
+
+static Point __ValidateMovePlayer(Map *map, Point posPlayer, Array *path) {
+    Point movePoint = (Point) {-1, -1};
+
+    // Move Up
+    if ((posPlayer.y-1) >= 0 && !__ValidatePointPath(path, (Point) {posPlayer.x, (posPlayer.y-1)}) &&
+        map->matrix[posPlayer.y-1][posPlayer.x] == FLOOR) {
+        movePoint = (Point) {posPlayer.x, (posPlayer.y-1)};
+        map->events[map->steps] = EVENT_UP;
+    }
+    // Move Right
+    else if ((posPlayer.x+1) < map->width && !__ValidatePointPath(path, (Point) {(posPlayer.x+1), posPlayer.y}) &&
+        map->matrix[posPlayer.y][posPlayer.x+1] == FLOOR) {
+        movePoint = (Point) {(posPlayer.x+1), posPlayer.y};
+        map->events[map->steps] = EVENT_RIGHT;
+    }
+    // Move Down
+    else if ((posPlayer.y+1) < map->height && !__ValidatePointPath(path, (Point) {posPlayer.x, (posPlayer.y+1)}) &&
+        map->matrix[posPlayer.y+1][posPlayer.x] == FLOOR) {
+        movePoint = (Point) {posPlayer.x, (posPlayer.y+1)};
+        map->events[map->steps] = EVENT_DOWN;
+    }
+    // Move Left
+    else if ((posPlayer.x-1) >= 0 && !__ValidatePointPath(path, (Point) {(posPlayer.x-1), posPlayer.y}) &&
+        map->matrix[posPlayer.y][posPlayer.x-1] == FLOOR) {
+        movePoint = (Point) {(posPlayer.x-1), posPlayer.y};
+        map->events[map->steps] = EVENT_LEFT;
+    }
+
+    return movePoint;
+}
 
 static bool __ValidateCharacter(char c) {
     switch (c) {
@@ -253,15 +566,15 @@ static bool __ValidateCharacter(char c) {
 }
 
 static void __SaveInfoDataMap(Map *map, char *rowData) {
-     char *auxRowData = (char *)malloc(sizeof(char)*strlen(rowData)+1);
-     strcpy(auxRowData, rowData);
+    char *auxRowData = (char *)malloc(sizeof(char)*strlen(rowData)+1);
+    strcpy(auxRowData, rowData);
 
-     map->maxSteps = atoi(strtok(auxRowData, " "));
-     map->width = atoi(strtok(NULL, " "));
-     map->height = atoi(strtok(NULL, " "));
+    map->maxSteps = atoi(strtok(auxRowData, " "));
+    map->width = atoi(strtok(NULL, " "));
+    map->height = atoi(strtok(NULL, " "));
 
-     free(auxRowData);
- }
+    free(auxRowData);
+}
 
 static bool __SaveMatrixMap(Map *map, const char *rowData, int iRow) {
     if (map->matrix == NULL)
@@ -280,8 +593,10 @@ static bool __SaveMatrixMap(Map *map, const char *rowData, int iRow) {
         if (rowData[iColumn] == ENEMY)
             map->numEnemies++;
 
-        if (rowData[iColumn] == PLAYER)
+        if (rowData[iColumn] == PLAYER) {
+            POS_PLAYER = (Point) {iColumn, iRow};
             map->numPlayer++;
+        }
     }
 
     return true;
@@ -306,41 +621,41 @@ static bool __ValidateDataMatrix(Map *map) {
 }
 
 static bool __InitMatrixMap(Map *map, const char *path) {
-     FILE *file = fopen(path, "r");
-     if (file == NULL) {
-         printf("\nNo se ha podido abrir el fichero.\n\n");
-         return false;
-     }
+    FILE *file = fopen(path, "r");
+    if (file == NULL) {
+        printf("\nNo se ha podido abrir el fichero.\n\n");
+        return false;
+    }
 
-     int indexRow = -1;
-     char *rowData = (char *)malloc(sizeof(char)*128);
-     while (feof(file) == 0) {
-         fgets(rowData, 128, file);
-         if (indexRow == -1)
-             __SaveInfoDataMap(map, rowData);
-         else if (indexRow > -1 && indexRow < map->height) {
-             if (!__SaveMatrixMap(map, rowData, indexRow))
-                return false;
-         }
+    int indexRow = -1;
+    char *rowData = (char *)malloc(sizeof(char)*128);
+    while (feof(file) == 0) {
+        fgets(rowData, 128, file);
+        if (indexRow == -1)
+            __SaveInfoDataMap(map, rowData);
+        else if (indexRow > -1 && indexRow < map->height) {
+        if (!__SaveMatrixMap(map, rowData, indexRow))
+            return false;
+        }
 
-         indexRow++;
-     }
+        indexRow++;
+    }
 
-     free(rowData);
-     rowData = NULL;
-     fclose(file);
+    free(rowData);
+    rowData = NULL;
+    fclose(file);
 
-     return __ValidateDataMatrix(map);
- }
+    return __ValidateDataMatrix(map);
+}
 
 static void __PrintMatrixMap(const Map *map) {
     if (map->matrix != NULL) {
         printf("\n");
         for (int i=0; i < map->height; i++) {
-         for (int j=0; j < map->width; j++) {
-             printf("%c ", map->matrix[i][j]);
-         }
-         printf("\n");
+            for (int j=0; j < map->width; j++) {
+                printf("%c ", map->matrix[i][j]);
+            }
+            printf("\n");
         }
         printf("\n");
     }
