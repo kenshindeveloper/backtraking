@@ -51,12 +51,12 @@ typedef struct Map {
 }Map;
 
 typedef struct ArrayMap {
-    Map **map;
+    Map *map;
     struct ArrayMap *prox;
 }ArrayMap;
 
 typedef struct ListArray {
-    Array **array;
+    Array *array;
     struct ListArray *prox;
 }ListArray;
 
@@ -78,7 +78,7 @@ void DeleteMap(Map *map);
 
 Map *CopyMap(Map *map); 
 
-void AddArrayMap(ArrayMap **arrayMap, Map **map);
+void AddArrayMap(ArrayMap **arrayMap, Map *map);
 
 void DeleteArrayMap(ArrayMap **arrayMap);
 
@@ -96,7 +96,7 @@ bool Backtraking(Map *map, Point posPlayer, Array *visitBomb, Array *visitNoBomb
 
 char *CopyEventArray(Map *map);
 
-void AddListArray(ListArray **listArray, Array **array);
+void AddListArray(ListArray **listArray, Array *array);
 
 void DeleteListArray(ListArray **listArray);
 
@@ -125,7 +125,7 @@ static bool __ValidateExplotion(Map *map);
 
 static bool __ValidatePutBomb(Map *map, Point posPlayer);
 
-static Point __ValidateMovePlayer(Map *map, Point posPlayer, Array *path);
+static Point __ValidateMovePlayer(Map *map, Point posPlayer, Array *visitBomb, Array *visitNoBomb);
 
 static bool __ValidatePointPath(Array *path, Point point);
 
@@ -147,9 +147,9 @@ int main(int argc, char *argv[]) {
         Backtraking(&map, POS_PLAYER, NULL, NULL);
 
     printf("\neliminando...\n");
-    // DeleteListArray(&COPY_ARRAYS);
-    // DeleteArrayMap(&COPY_MAPS);
-    // DeleteMap(&map);
+    DeleteListArray(&COPY_ARRAYS);
+    DeleteArrayMap(&COPY_MAPS);
+    DeleteMap(&map);
 
     return EXIT_SUCCESS;
 }
@@ -157,10 +157,10 @@ int main(int argc, char *argv[]) {
 /**************************************************************
  *-----------------------IMPLEMENTACION------------------------
  **************************************************************/
-void AddListArray(ListArray **listArray, Array **array) {
+void AddListArray(ListArray **listArray, Array *array) {
     if ((*listArray) == NULL) {
         (*listArray) = (ListArray *)malloc(sizeof(ListArray));
-        (*listArray)->array = array;
+        (*listArray)->array = &(*array);
         (*listArray)->prox = NULL;
     }
     else {
@@ -169,7 +169,7 @@ void AddListArray(ListArray **listArray, Array **array) {
             auxListArray = auxListArray->prox;
         
         auxListArray->prox = (ListArray *)malloc(sizeof(ListArray));
-        auxListArray->prox->array = array;
+        auxListArray->prox->array = &(*array);
         auxListArray->prox->prox = NULL;
     }
 }
@@ -179,7 +179,7 @@ void DeleteListArray(ListArray **listArray) {
     while ((*listArray) != NULL) {
         auxListArray = (*listArray);
         (*listArray) = (*listArray)->prox;
-        DeleteArray(auxListArray->array);
+        DeleteArray(&(auxListArray->array));
         free(auxListArray);
         auxListArray = NULL;
     }
@@ -206,10 +206,10 @@ char **CopyMatrix(Map *map) {
     return copyMatrix;
 }
 
-void AddArrayMap(ArrayMap **arrayMap, Map **map) {
+void AddArrayMap(ArrayMap **arrayMap, Map *map) {
     if ((*arrayMap) == NULL) {
         (*arrayMap) = (ArrayMap *)malloc(sizeof(ArrayMap));
-        (*arrayMap)->map = map;
+        (*arrayMap)->map = &(*map);
         (*arrayMap)->prox = NULL;
     }
     else {
@@ -218,7 +218,7 @@ void AddArrayMap(ArrayMap **arrayMap, Map **map) {
             auxArrayMap = auxArrayMap->prox;
         
         auxArrayMap->prox = (ArrayMap *)malloc(sizeof(ArrayMap));
-        auxArrayMap->prox->map = map;
+        auxArrayMap->prox->map = &(*map);
         auxArrayMap->prox->prox = NULL;
     }
 }
@@ -238,7 +238,7 @@ Map *CopyMap(Map *map) {
     copyMap->matrix = CopyMatrix(map);
     copyMap->events = CopyEventArray(map);
 
-    AddArrayMap(&COPY_MAPS, &copyMap);
+    AddArrayMap(&COPY_MAPS, &(*copyMap));
     return copyMap;
 }
 
@@ -248,7 +248,7 @@ void DeleteArrayMap(ArrayMap **arrayMap) {
     while ((*arrayMap) != NULL) {
         auxArrayMap = (*arrayMap);
         (*arrayMap) = (*arrayMap)->prox;
-        DeleteMap((*auxArrayMap->map));
+        DeleteMap(auxArrayMap->map);
         free(auxArrayMap);
         auxArrayMap = NULL;
     }
@@ -273,8 +273,10 @@ Map NewMap(const char *path) {
 
 void DeleteMap(Map *map) {
     if (map != NULL) {
-        free(map->events);
-        map->events = NULL;
+        if (map->events != NULL) {
+            free(map->events);
+            map->events = NULL;
+        }
 
         for (int i=0; i < map->height; i++) {
             free(map->matrix[i]);
@@ -293,7 +295,6 @@ void AddPointArray(Array **array, Point point) {
         (*array) = (Array *)malloc(sizeof(Array));
         (*array)->point = point;
         (*array)->prox = NULL;
-        printf("almacenado(0)\n");
     }
     else {
         Array *auxArray = (*array);
@@ -303,7 +304,6 @@ void AddPointArray(Array **array, Point point) {
         auxArray->prox = (Array *)malloc(sizeof(Array));
         auxArray->prox->point = point;
         auxArray->prox->prox = NULL;
-        printf("almacenado(1)\n");
     }
 }
 
@@ -327,7 +327,7 @@ Array *CopyArray(Array *array) {
     }
 
     if (copyArray != NULL)
-        AddListArray(&COPY_ARRAYS, &copyArray);
+        AddListArray(&COPY_ARRAYS, &(*copyArray));
     
     return copyArray;
 }
@@ -344,10 +344,6 @@ void PrintArray(Array *const array) {
 
 bool Backtraking(Map *map, Point posPlayer, Array *visitBomb, Array *visitNoBomb) {
     __PrintMatrixMap(map);
-    printf("\n\n******************************\n");
-    __PrintArray(visitBomb);
-    printf("\n******************************\n\n");
-
     if (map->steps > (map->maxSteps-1))
         return false;
 
@@ -383,15 +379,9 @@ bool Backtraking(Map *map, Point posPlayer, Array *visitBomb, Array *visitNoBomb
     // if (!map->isPutBomb && __ValidatePutBomb(copyMap, posPlayer))
     //     Backtraking(copyMap, posPlayer, &auxVisitNoBomb, &auxVisitBomb);
     
-    Map *copyMoveMap = CopyMap(map);
-    Point movePoint = (Point) {-1, -1};
-    if (map->isPutBomb)
-        movePoint = __ValidateMovePlayer(copyMoveMap, posPlayer, auxVisitBomb);
-    else if (!map->isPutBomb)
-        movePoint = __ValidateMovePlayer(copyMoveMap, posPlayer, auxVisitNoBomb);
-    
-    if (movePoint.x > -1)
-        Backtraking(copyMoveMap, movePoint, auxVisitBomb, auxVisitNoBomb);
+    __ValidateMovePlayer(map, posPlayer, auxVisitBomb, auxVisitNoBomb);
+    // if (movePoint.x > -1)
+    //     Backtraking(copyMoveMap, movePoint, auxVisitBomb, auxVisitNoBomb);
     
     if(map->numEnemies == 0 && (map->steps <= (map->maxSteps-1)) && (TOTAL_STEPS > map->steps)) {
         printf("solucion hallada bitch...\n");
@@ -409,7 +399,6 @@ bool Backtraking(Map *map, Point posPlayer, Array *visitBomb, Array *visitNoBomb
 static void __PrintArray(Array *array) {
     Array *auxArray = array;
     while (auxArray != NULL) {
-        printf("point: x: %d, y: %d\n", auxArray->point.x, auxArray->point.y);
         auxArray = auxArray->prox;
     } 
 }
@@ -588,44 +577,52 @@ static bool __ValidatePutBomb(Map *map, Point posPlayer) {
     return  map->isPutBomb;
 }
 
-static Point __ValidateMovePlayer(Map *map, Point posPlayer, Array *path) {
+static Point __ValidateMovePlayer(Map *map, Point posPlayer, Array *visitBomb, Array *visitNoBomb) {
     system("pause");
     Point movePoint = (Point) {-1, -1};
     // Move Up
-    if ((posPlayer.y-1) >= 0 && !__ValidatePointPath(path, (Point) {posPlayer.x, (posPlayer.y-1)}) &&
+    if ((posPlayer.y-1) >= 0 && !__ValidatePointPath((map->isPutBomb)?(visitBomb):(visitNoBomb), (Point) {posPlayer.x, (posPlayer.y-1)}) &&
         map->matrix[posPlayer.y-1][posPlayer.x] == FLOOR) {
         movePoint = (Point) {posPlayer.x, (posPlayer.y-1)};
-        map->events[map->steps] = EVENT_UP;
-        map->matrix[posPlayer.y][posPlayer.x] = FLOOR;
-        map->matrix[posPlayer.y-1][posPlayer.x] = PLAYER;
+        Map *copyMoveMap = CopyMap(map);
+        copyMoveMap->events[map->steps] = EVENT_UP;
+        copyMoveMap->matrix[posPlayer.y][posPlayer.x] = FLOOR;
+        copyMoveMap->matrix[posPlayer.y-1][posPlayer.x] = PLAYER;
         printf("move UP...\n");
+        Backtraking(copyMoveMap, movePoint, visitBomb, visitNoBomb);
     }
     // Move Right
-    else if ((posPlayer.x+1) < map->width && !__ValidatePointPath(path, (Point) {(posPlayer.x+1), posPlayer.y}) &&
+    if ((posPlayer.x+1) < map->width && !__ValidatePointPath((map->isPutBomb)?(visitBomb):(visitNoBomb), (Point) {(posPlayer.x+1), posPlayer.y}) &&
         map->matrix[posPlayer.y][posPlayer.x+1] == FLOOR) {
         movePoint = (Point) {(posPlayer.x+1), posPlayer.y};
-        map->events[map->steps] = EVENT_RIGHT;
-        map->matrix[posPlayer.y][posPlayer.x] = FLOOR;
-        map->matrix[posPlayer.y][posPlayer.x+1] = PLAYER;
+        Map *copyMoveMap = CopyMap(map);
+        copyMoveMap->events[map->steps] = EVENT_RIGHT;
+        copyMoveMap->matrix[posPlayer.y][posPlayer.x] = FLOOR;
+        copyMoveMap->matrix[posPlayer.y][posPlayer.x+1] = PLAYER;
         printf("move RIGHT...\n");
+        Backtraking(copyMoveMap, movePoint, visitBomb, visitNoBomb);
     }
     // Move Down
-    else if ((posPlayer.y+1) < map->height && !__ValidatePointPath(path, (Point) {posPlayer.x, (posPlayer.y+1)}) &&
+    if ((posPlayer.y+1) < map->height && !__ValidatePointPath((map->isPutBomb)?(visitBomb):(visitNoBomb), (Point) {posPlayer.x, (posPlayer.y+1)}) &&
         map->matrix[posPlayer.y+1][posPlayer.x] == FLOOR) {
         movePoint = (Point) {posPlayer.x, (posPlayer.y+1)};
-        map->events[map->steps] = EVENT_DOWN;
-        map->matrix[posPlayer.y][posPlayer.x] = FLOOR;
-        map->matrix[posPlayer.y+1][posPlayer.x] = PLAYER;
+        Map *copyMoveMap = CopyMap(map);
+        copyMoveMap->events[map->steps] = EVENT_DOWN;
+        copyMoveMap->matrix[posPlayer.y][posPlayer.x] = FLOOR;
+        copyMoveMap->matrix[posPlayer.y+1][posPlayer.x] = PLAYER;
         printf("move DOWN...\n");
+        Backtraking(copyMoveMap, movePoint, visitBomb, visitNoBomb);
     }
     // Move Left
-    else if ((posPlayer.x-1) >= 0 && !__ValidatePointPath(path, (Point) {(posPlayer.x-1), posPlayer.y}) &&
+    if ((posPlayer.x-1) >= 0 && !__ValidatePointPath((map->isPutBomb)?(visitBomb):(visitNoBomb), (Point) {(posPlayer.x-1), posPlayer.y}) &&
         map->matrix[posPlayer.y][posPlayer.x-1] == FLOOR) {
         movePoint = (Point) {(posPlayer.x-1), posPlayer.y};
-        map->events[map->steps] = EVENT_LEFT;
-        map->matrix[posPlayer.y][posPlayer.x] = FLOOR;
-        map->matrix[posPlayer.y][posPlayer.x-1] = PLAYER;
+        Map *copyMoveMap = CopyMap(map);
+        copyMoveMap->events[map->steps] = EVENT_LEFT;
+        copyMoveMap->matrix[posPlayer.y][posPlayer.x] = FLOOR;
+        copyMoveMap->matrix[posPlayer.y][posPlayer.x-1] = PLAYER;
         printf("move LEFT...\n");
+        Backtraking(copyMoveMap, movePoint, visitBomb, visitNoBomb);
     }
 
     return movePoint;
