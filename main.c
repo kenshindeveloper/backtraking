@@ -619,10 +619,19 @@ static Point __ValidateMovePlayer(Map *map, Point posPlayer, Array *visitBomb, A
         movePoint = (Point) {(posPlayer.x-1), posPlayer.y};
         Map *copyMoveMap = CopyMap(map);
         copyMoveMap->events[map->steps] = EVENT_LEFT;
-        copyMoveMap->matrix[posPlayer.y][posPlayer.x] = FLOOR;
+        if (copyMoveMap->isPutBomb && copyMoveMap->stepsBomb == 1)
+            copyMoveMap->matrix[posPlayer.y][posPlayer.x] = EVENT_BOMB;
+        else
+            copyMoveMap->matrix[posPlayer.y][posPlayer.x] = FLOOR;
         copyMoveMap->matrix[posPlayer.y][posPlayer.x-1] = PLAYER;
         printf("move LEFT...\n");
         Backtraking(copyMoveMap, movePoint, visitBomb, visitNoBomb);
+    }
+
+    if (map->isPutBomb && map->stepsBomb < 3 && __ValidateExplotion(map)) {
+        Map *copyMoveMap = CopyMap(map);
+        copyMoveMap->events[map->steps] = EVENT_WAIT;
+        Backtraking(map, posPlayer, visitBomb, visitNoBomb);
     }
 
     return movePoint;
