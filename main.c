@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define DEBUG 1
+// #define DEBUG 1
 
 #define EVENT_UP 'N'
 #define EVENT_RIGHT 'E'
@@ -393,12 +393,12 @@ bool Backtraking(Map *map, Point posPlayer, Array *visitBomb, Array *visitNoBomb
         system("pause");
 #endif //DEBUG
         if (!map->isPutBomb && (map->steps < (map->maxSteps-2)) && __ValidatePutBomb(map, posPlayer)) {
-            Map *copyMap = CopyMap(map);
-            copyMap->events[map->steps] = EVENT_BOMB;
-            copyMap->posBomb = (Point) {posPlayer.x, posPlayer.y};
 #ifdef DEBUG
             printf("colocando bomba...\n");
 #endif //DEBUG
+            Map *copyMap = CopyMap(map);
+            copyMap->events[map->steps] = EVENT_BOMB;
+            copyMap->posBomb = (Point) {posPlayer.x, posPlayer.y};
             copyMap->isPutBomb = true;
             Backtraking(copyMap, posPlayer, auxVisitBomb, auxVisitBomb);
         }
@@ -538,7 +538,7 @@ static bool __PutExplotionHorizontal(Map *map, Point posPlayer) {
                 return true;
             }
             else if (map->matrix[posPlayer.y][(posPlayer.x+j)] == WALL)
-                evalLeft = false;
+                evalRight = false;
         }
     }
     return false;
@@ -644,6 +644,9 @@ static void __ValidateMovePlayer(Map *map, Point posPlayer, Array *visitBomb, Ar
     Point movePoint = {0};
     // Move Wait
     if (map->numEnemies > 0 && map->isPutBomb && map->stepsBomb <= 3 && __IsSavedPlayer(map)) {
+#ifdef DEBUG
+        printf("move WAIT..\n");
+#endif //DEBUG
         Map *copyMoveMap = CopyMap(map);
         copyMoveMap->events[map->steps] = EVENT_WAIT;
         Backtraking(copyMoveMap, posPlayer, visitBomb, visitNoBomb);
@@ -653,6 +656,9 @@ static void __ValidateMovePlayer(Map *map, Point posPlayer, Array *visitBomb, Ar
     // Move Up
     if (map->numEnemies > 0 && (posPlayer.y-1) >= 0 && !__ValidatePointPath((map->isPutBomb)?(visitBomb):(visitNoBomb), (Point) {posPlayer.x, (posPlayer.y-1)}) &&
         map->matrix[posPlayer.y-1][posPlayer.x] == FLOOR) {
+#ifdef DEBUG
+        printf("move UP..\n");
+#endif //DEBUG
         movePoint = (Point) {posPlayer.x, (posPlayer.y-1)};
         Map *copyMoveMap = CopyMap(map);
         copyMoveMap->events[map->steps] = EVENT_UP;
@@ -663,6 +669,9 @@ static void __ValidateMovePlayer(Map *map, Point posPlayer, Array *visitBomb, Ar
     // Move Right
     if (map->numEnemies > 0 && (posPlayer.x+1) < map->width && !__ValidatePointPath((map->isPutBomb)?(visitBomb):(visitNoBomb), (Point) {(posPlayer.x+1), posPlayer.y}) &&
         map->matrix[posPlayer.y][posPlayer.x+1] == FLOOR) {
+#ifdef DEBUG
+        printf("move RIGHT..\n");
+#endif //DEBUG
         movePoint = (Point) {(posPlayer.x+1), posPlayer.y};
         Map *copyMoveMap = CopyMap(map);
         copyMoveMap->events[map->steps] = EVENT_RIGHT;
@@ -673,6 +682,9 @@ static void __ValidateMovePlayer(Map *map, Point posPlayer, Array *visitBomb, Ar
     // Move Down
     if (map->numEnemies > 0 && (posPlayer.y+1) < map->height && !__ValidatePointPath((map->isPutBomb)?(visitBomb):(visitNoBomb), (Point) {posPlayer.x, (posPlayer.y+1)}) &&
         map->matrix[posPlayer.y+1][posPlayer.x] == FLOOR) {
+#ifdef DEBUG
+        printf("move DOWN..\n");
+#endif //DEBUG
         movePoint = (Point) {posPlayer.x, (posPlayer.y+1)};
         Map *copyMoveMap = CopyMap(map);
         copyMoveMap->events[map->steps] = EVENT_DOWN;
@@ -683,6 +695,9 @@ static void __ValidateMovePlayer(Map *map, Point posPlayer, Array *visitBomb, Ar
     // Move Left
     if (map->numEnemies > 0 && (posPlayer.x-1) >= 0 && !__ValidatePointPath((map->isPutBomb)?(visitBomb):(visitNoBomb), (Point) {(posPlayer.x-1), posPlayer.y}) &&
         map->matrix[posPlayer.y][posPlayer.x-1] == FLOOR) {
+#ifdef DEBUG
+        printf("move LEFT..\n");
+#endif //DEBUG
         movePoint = (Point) {(posPlayer.x-1), posPlayer.y};
         Map *copyMoveMap = CopyMap(map);
         copyMoveMap->events[map->steps] = EVENT_LEFT;
